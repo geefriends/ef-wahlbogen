@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wahlbogen Einführungsphase - Ernst-Mach-Gymnasium Hürth</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: #f5f5f5;
+    color: #1a1a1a;
+    padding: 16px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 4px; }
+  .subtitle { color: #666; font-size: 0.9rem; margin-bottom: 16px; }
+
+  /* Rules */
+  .rules {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    font-size: 0.85rem;
+    line-height: 1.6;
+  }
+  .rules h3 { font-size: 0.95rem; margin-bottom: 8px; }
+  .rules ul { padding-left: 20px; }
+  .rules li { margin-bottom: 2px; }
+  .rules .highlight {
+    background: #fff3cd;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-top: 10px;
+    font-weight: 500;
+  }
+
+  /* Status bar */
+  .status-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .status-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+  .status-card .label {
+    font-size: 0.7rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .status-card .value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+  .status-card .value.ok { color: #27ae60; }
+  .status-card .value.warn { color: #e67e22; }
+  .status-card .value.error { color: #e74c3c; }
+
+  /* Action bar */
+  .action-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    padding: 9px 18px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-primary { background: #2c3e50; color: #fff; }
+  .btn-primary:hover { background: #1a252f; }
+  .btn-secondary { background: #fff; color: #2c3e50; border: 1px solid #ccc; }
+  .btn-secondary:hover { background: #f0f0f0; }
+  .btn-danger { background: #fff; color: #e74c3c; border: 1px solid #e74c3c; }
+  .btn-danger:hover { background: #fdf0ef; }
+  .save-status {
+    font-size: 0.8rem;
+    color: #27ae60;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .save-status.visible { opacity: 1; }
+
+  /* Table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 16px;
+  }
+  th {
+    background: #2c3e50;
+    color: #fff;
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  th.center, td.center { text-align: center; }
+  td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9rem;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr.pflicht { background: #f8f9fa; }
+  tr.wahl { background: #fff; }
+  tr.total-row {
+    background: #2c3e50;
+    color: #fff;
+    font-weight: 700;
+    font-size: 1rem;
+  }
+  tr.total-row td { border-bottom: none; padding: 12px; }
+
+  .nr { width: 40px; text-align: center; font-weight: 600; color: #666; }
+  .fach { min-width: 200px; }
+  .fach-label { font-weight: 500; }
+  .fach-options { color: #888; font-size: 0.8rem; }
+
+  select, input[type="number"] {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 16px; /* prevents iOS zoom */
+    background: #fff;
+    width: 100%;
+  }
+  select:focus, input[type="number"]:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52,152,219,0.2);
+  }
+  input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+  }
+  input[type="number"] {
+    width: 60px;
+    text-align: center;
+  }
+
+  tr.section-header td {
+    background: #e8ecf0;
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 6px 12px;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+  .badge-pflicht { background: #dbeafe; color: #1e40af; }
+  .badge-wahl { background: #fef3c7; color: #92400e; }
+  .badge-vert { background: #ede9fe; color: #5b21b6; }
+
+  /* Warnings */
+  .warnings { margin-top: 12px; }
+  .warning-item {
+    background: #fff3cd;
+    border-left: 4px solid #e67e22;
+    padding: 8px 14px;
+    margin-bottom: 6px;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.85rem;
+  }
+  .error-item {
+    background: #f8d7da;
+    border-left: 4px solid #e74c3c;
+    padding: 8px 14px;
+    margin-bottom: 6px;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.85rem;
+  }
+  .success-item {
+    background: #d4edda;
+    border-left: 4px solid #27ae60;
+    padding: 8px 14px;
+    margin-bottom: 6px;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.85rem;
+  }
+
+  /* ========== MOBILE ========== */
+  @media (max-width: 700px) {
+    body { padding: 12px; }
+    h1 { font-size: 1.2rem; }
+
+    .rules { font-size: 0.8rem; padding: 12px; }
+    .rules ul { padding-left: 16px; }
+
+    .status-bar {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .status-card { padding: 8px 10px; }
+    .status-card .value { font-size: 1.3rem; }
+
+    /* Card layout instead of table on mobile */
+    table, thead, tbody, th, td, tr { display: block; }
+    thead { display: none; }
+
+    tr.section-header td {
+      padding: 10px 12px;
+      font-size: 0.85rem;
+      margin-top: 8px;
+      border-radius: 8px 8px 0 0;
+    }
+
+    tr.pflicht, tr.wahl {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto auto;
+      gap: 8px;
+    }
+
+    tr.pflicht .nr, tr.wahl .nr {
+      display: none;
+    }
+    tr.pflicht .fach, tr.wahl .fach {
+      grid-column: 1 / -1;
+      min-width: 0;
+    }
+    tr.pflicht td:nth-child(3), tr.wahl td:nth-child(3) {
+      grid-column: 1 / -1;
+    }
+    tr.pflicht td:nth-child(4), tr.wahl td:nth-child(4) {
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    tr.pflicht td:nth-child(4)::before, tr.wahl td:nth-child(4)::before {
+      content: "Schriftlich";
+      font-size: 0.8rem;
+      color: #888;
+    }
+    tr.pflicht td:nth-child(5), tr.wahl td:nth-child(5) {
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    tr.pflicht td:nth-child(5)::before, tr.wahl td:nth-child(5)::before {
+      content: "Std./Woche";
+      font-size: 0.8rem;
+      color: #888;
+    }
+
+    tr.total-row {
+      border-radius: 8px;
+      margin-top: 4px;
+      display: flex;
+      justify-content: space-between;
+      padding: 14px 16px;
+    }
+    tr.total-row td:first-child {
+      text-align: left;
+      padding: 0;
+    }
+    tr.total-row td:last-child {
+      padding: 0;
+      font-size: 1.2rem;
+    }
+
+    select { font-size: 16px; }
+    input[type="number"] { font-size: 16px; width: 70px; }
+
+    .action-bar { gap: 8px; }
+    .btn { padding: 10px 14px; font-size: 0.8rem; flex: 1; justify-content: center; min-width: 0; }
+  }
+
+  /* ========== PRINT ========== */
+  @media print {
+    body { background: #fff; padding: 12px; font-size: 11pt; }
+    .action-bar, .warnings, .no-print { display: none !important; }
+    .status-bar { gap: 8px; margin-bottom: 10px; }
+    .status-card { border: 1px solid #999; padding: 8px 12px; }
+    .status-card .value { font-size: 1.2rem; }
+    .rules { border: 1px solid #999; margin-bottom: 12px; padding: 10px 14px; }
+    table { box-shadow: none; border: 1px solid #999; display: table; }
+    thead { display: table-header-group; }
+    tbody { display: table-row-group; }
+    tr { display: table-row; }
+    td, th { display: table-cell; }
+    th { background: #333 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tr.section-header td { background: #ddd !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tr.total-row { background: #333 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tr.pflicht { background: #f0f0f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tr.pflicht, tr.wahl { border: none; margin: 0; padding: 0; }
+    tr.pflicht .nr, tr.wahl .nr { display: table-cell; }
+    tr.pflicht td::before, tr.wahl td::before { display: none; }
+    tr.total-row { display: table-row; }
+
+    select { appearance: none; -webkit-appearance: none; border: none; background: transparent; font-weight: 600; padding: 0; }
+    input[type="number"] { appearance: none; -webkit-appearance: none; border: none; background: transparent; font-weight: 600; width: auto; padding: 0; }
+    input[type="checkbox"] { appearance: none; -webkit-appearance: none; width: 16px; height: 16px; border: 1.5px solid #333; border-radius: 2px; position: relative; vertical-align: middle; }
+    input[type="checkbox"]:checked::after {
+      content: "X";
+      position: absolute;
+      top: -1px; left: 2px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #333;
+    }
+  }
+</style>
+</head>
+<body>
+
+<h1>Wahlbogen Einführungsphase (EF)</h1>
+<p class="subtitle">Ernst-Mach-Gymnasium Hürth</p>
+
+<div class="rules">
+  <h3>Regeln der Fächerwahl</h3>
+  <ul>
+    <li><strong>Pflichtbereich (1-8):</strong> Deutsch, eine fortgeführte Fremdsprache, Kunst oder Musik, eine Gesellschaftswissenschaft, Mathematik, eine Naturwissenschaft, Religion/Philosophie, Sport</li>
+    <li><strong>Weiteres Pflichtfach (9):</strong> zweite Fremdsprache ODER zweite Naturwissenschaft (wer keine 2. Fremdsprache ab Kl. 6/8 fortführt, muss eine neu einsetzende Fremdsprache wählen)</li>
+    <li><strong>Schriftliche Fächer:</strong> Deutsch, Mathematik, alle Fremdsprachen und mindestens eine Gesellschaftswissenschaft oder Naturwissenschaft müssen schriftlich belegt werden</li>
+    <li><strong>Grundkurse:</strong> in der EF 11-12 Grundkurse (je 3 Stunden), ggf. + Vertiefungskurse (je 2 Stunden)</li>
+  </ul>
+  <div class="highlight">Wochenstunden insgesamt: mindestens 34, höchstens 36 Stunden</div>
+</div>
+
+<div class="status-bar">
+  <div class="status-card">
+    <div class="label">Wochenstunden</div>
+    <div class="value" id="totalHours">0</div>
+  </div>
+  <div class="status-card">
+    <div class="label">Grundkurse</div>
+    <div class="value" id="totalGK">0</div>
+  </div>
+  <div class="status-card">
+    <div class="label">Vertiefung</div>
+    <div class="value" id="totalVK">0</div>
+  </div>
+  <div class="status-card">
+    <div class="label">Schriftlich</div>
+    <div class="value" id="totalSchriftlich">0</div>
+  </div>
+</div>
+
+<div class="action-bar">
+  <button class="btn btn-primary" onclick="window.print()">PDF / Drucken</button>
+  <button class="btn btn-secondary" onclick="saveData()">Speichern</button>
+  <button class="btn btn-danger" onclick="resetData()">Zurücksetzen</button>
+  <span class="save-status" id="saveStatus">Gespeichert</span>
+</div>
+
+<table id="wahlbogen">
+  <thead>
+    <tr>
+      <th class="center" style="width:40px">Nr</th>
+      <th>Fach / Aufgabenfeld</th>
+      <th style="width:160px">Eigene Wahl</th>
+      <th class="center" style="width:90px">Schriftl.</th>
+      <th class="center" style="width:90px">Std./Woche</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class="section-header"><td colspan="5">Pflichtbereich</td></tr>
+
+    <tr class="pflicht" data-row="1">
+      <td class="nr">1</td>
+      <td class="fach">
+        <span class="fach-label">Deutsch</span> <span class="badge badge-pflicht">Pflicht</span>
+        <div class="fach-options">Aufgabenfeld I (sprachlich-literarisch)</div>
+      </td>
+      <td><select id="wahl1" onchange="recalc()"><option value="D" selected>D - Deutsch</option></select></td>
+      <td class="center"><input type="checkbox" id="schr1" checked disabled title="Deutsch ist immer schriftlich"></td>
+      <td class="center"><input type="number" id="std1" value="3" min="0" max="5" onchange="recalc()"></td>
+    </tr>
+
+    <tr class="pflicht" data-row="2">
+      <td class="nr">2</td>
+      <td class="fach">
+        <span class="fach-label">Fortgeführte Fremdsprache</span> <span class="badge badge-pflicht">Pflicht</span>
+        <div class="fach-options">Aufgabenfeld I</div>
+      </td>
+      <td>
+        <select id="wahl2" onchange="recalc()">
+          <option value="">-- wählen --</option>
+          <option value="E">E - Englisch</option>
+          <option value="F">F - Französisch</option>
+          <option value="L">L - Latein</option>
+        </select>
+      </td>
+      <td class="center"><input type="checkbox" id="schr2" checked disabled title="Fremdsprachen sind immer schriftlich"></td>
+      <td class="center"><input type="number" id="std2" value="3" min="0" max="5" onchange="recalc()"></td>
+    </tr>
+
+    <tr class="pflicht" data-row="3">
+      <td class="nr">3</td>
+      <td class="fach">
+        <span class="fach-label">Kunst oder Musik</span> <span class="badge badge-pflicht">Pflicht</span>
+        <div class="fach-options">Aufgabenfeld I</div>
+      </td>
+      <td>
+        <select id="wahl3" onchange="recalc()">
+          <option value="">-- wählen --</option>
+          <option value="KU">KU - Kunst</option>
+          <option value="MU">MU - Musik</option>
+        </select>
+      </td>
+      <td class="center"><input type="checkbox" id="schr3" onchange="recalc()"></td>
+      <td class="center"><input type="number" id="std3" value="3" min="0" max="5" onchange="recalc()"></td>
+    </tr>
+
+    <tr class="pflicht" data-row="4">
+      <td class="nr">4</td>
+      <td class="fach">
+        <span class="fach-label">Gesellschaftswissenschaft</span> <span class="badge badge-pflicht">Pflicht</span>
+        <div class="fach-options">Aufgabenfeld II</div>
+      </td>
+      <td>
+        <select id="wahl4" onchange="recalc()">
+          <option value="">-- wählen --</option>
+          <option value="GE">GE - Geschichte</option>
+          <option value="EK">EK - Erdkunde</option>
+          <option value="SW">SW - Sozialwissenschaften</option>
+          <option value="PA">PA - Pädagogik</option>
+          <option value="PS">PS - Psychologie</option>
+        </select>
+      </td>
+      <td class="center"><input type="checkbox" id="schr4" onchange="recalc()"></td>
+      <td class="center"><input type="number" id="std4" value="3" min="0" max="5" onchange="recalc()"></td>
+    </tr>
+
+    <tr class="pflicht" data-row="5">
+      <td class="nr">5</td>
+      <td class="fach">
+        <span class="fach-label">Mathematik</span> <span class="badge badge-pflicht">Pflicht</span>
+        <div class="fach-options">Aufgabenfeld III (mathematisch-naturwiss.)</div>
+      </td>
+      <td><select id="wahl5" onchange="recalc()"><option value="M" selected>M - Mathematik</option></select></td>
+      <td class="center"><input type="checkbox" id="schr5" checked disabled title="Mathematik ist immer schriftlich"></td>
+      <td class="center"><input type="number" id="std5" value="3" min="0" max="5" onchange="recalc()"></td>
+    </tr>
+
+    <tr class="pflicht" data-row="6">
+      <td class="nr">6</td>
+      <td class="fach">
+        <span class="fach-label">Naturwissenschaft</span> <span class="badge badge-pflicht">Pflicht</span>
+        <div class="fach-options">Aufgabenfeld III</div>
+      </td>
+      <td>
+        <select id="wahl6" onchange="recalc()">
+          <option value="">-- wählen --</option>
+          <option value="BI">BI - Biologie</option>
+          <option value="CH">CH - Chemie</option>
+          <option value="PH">PH - Physik</option>
+        </select>
+      </td>
+      <td class="center"><input type="checkbox" id="schr6" onchange="recalc()"></td>
+      <td class="center"><input type="number" id="std6" value="3" min="0" max="5" onchange="recalc()"></td>
+    </tr>
+
+    <tr class="pflicht" data-row="7">
+      <td class="nr">7</td>
+      <td class="fach">
+        <span class="fach-label">Religionslehre / Philosophie</span> <span class="badge badge-pflicht">Pflicht</span>
+        <div class="fach-options">Aufgabenfeld II</div>
+      </td>
+      <td>
+        <select id="wahl7" onchange="recalc()">
+          <option value="">-- wählen --</option>
+          <option value="ER">ER - Ev. Religionslehre</option>
+          <option value="KR">KR - Kath. Religionslehre</option>
+          <option value="PL">PL - Philosophie</option>
+        </select>
+      </td>
+      <td class="center"><input type="checkbox" id="schr7" onchange="recalc()"></td>
+      <td class="center"><input type="number" id="std7" value="3" min="0" max="5" onchange="recalc()"></td>
+    </tr>
+
+    <tr class="pflicht" data-row="8">
+      <td class="nr">8</td>
+      <td class="fach">
+        <span class="fach-label">Sport</span> <span class="badge badge-pflicht">Pflicht</span>
+        <div class="fach-options">Ohne Aufgabenfeld</div>
+      </td>
+      <td><select id="wahl8" onchange="recalc()"><option value="SP" selected>SP - Sport</option></select></td>
+      <td class="center"><input type="checkbox" id="schr8" onchange="recalc()"></td>
+      <td class="center"><input type="number" id="std8" value="3" min="0" max="5" onchange="recalc()"></td>
+    </tr>
+
+    <tr class="section-header"><td colspan="5">Wahlpflichtbereich</td></tr>
+
+    <tr class="wahl" data-row="9">
+      <td class="nr">9</td>
+      <td class="fach">
+        <span class="fach-label">Weiteres Pflichtfach</span> <span class="badge badge-wahl">Wahlpflicht</span>
+        <div class="fach-options">2. Fremdsprache oder 2. Naturwissenschaft</div>
+      </td>
+      <td>
+        <select id="wahl9" onchange="recalc()">
+          <option value="">-- wählen --</option>
+          <optgroup label="Fremdsprachen">
+            <option value="E">E - Englisch</option>
+            <option value="F">F - Französisch</option>
+            <option value="L">L - Latein</option>
+            <option value="S">S - Spanisch (neu)</option>
+          </optgroup>
+          <optgroup label="Naturwissenschaften">
+            <option value="BI">BI - Biologie</option>
+            <option value="CH">CH - Chemie</option>
+            <option value="PH">PH - Physik</option>
+          </optgroup>
+          <optgroup label="Gesellschaftswissenschaften">
+            <option value="GE">GE - Geschichte</option>
+            <option value="EK">EK - Erdkunde</option>
+            <option value="SW">SW - Sozialwissenschaften</option>
+            <option value="PA">PA - Pädagogik</option>
+            <option value="PS">PS - Psychologie</option>
+          </optgroup>
+          <optgroup label="Sonstige">
+            <option value="KU">KU - Kunst</option>
+            <option value="MU">MU - Musik</option>
+            <option value="IF">IF - Informatik</option>
+          </optgroup>
+        </select>
+      </td>
+      <td class="center"><input type="checkbox" id="schr9" onchange="recalc()"></td>
+      <td class="center"><input type="number" id="std9" value="3" min="0" max="5" onchange="recalc()"></td>
+    </tr>
+
+    <tr class="wahl" data-row="10">
+      <td class="nr">10</td>
+      <td class="fach">
+        <span class="fach-label">Weiteres Wahlfach</span> <span class="badge badge-wahl">Wahl</span>
+        <div class="fach-options">Zusätzlicher Grundkurs</div>
+      </td>
+      <td>
+        <select id="wahl10" onchange="recalc()">
+          <option value="">-- nicht belegt --</option>
+          <optgroup label="Fremdsprachen">
+            <option value="E">E - Englisch</option>
+            <option value="F">F - Französisch</option>
+            <option value="L">L - Latein</option>
+            <option value="S">S - Spanisch (neu)</option>
+          </optgroup>
+          <optgroup label="Naturwissenschaften">
+            <option value="BI">BI - Biologie</option>
+            <option value="CH">CH - Chemie</option>
+            <option value="PH">PH - Physik</option>
+          </optgroup>
+          <optgroup label="Gesellschaftswissenschaften">
+            <option value="GE">GE - Geschichte</option>
+            <option value="EK">EK - Erdkunde</option>
+            <option value="SW">SW - Sozialwissenschaften</option>
+            <option value="PA">PA - Pädagogik</option>
+            <option value="PS">PS - Psychologie</option>
+          </optgroup>
+          <optgroup label="Sonstige">
+            <option value="KU">KU - Kunst</option>
+            <option value="MU">MU - Musik</option>
+            <option value="IF">IF - Informatik</option>
+          </optgroup>
+        </select>
+      </td>
+      <td class="center"><input type="checkbox" id="schr10" onchange="recalc()"></td>
+      <td class="center"><input type="number" id="std10" value="3" min="0" max="5" onchange="recalc()"></td>
+    </tr>
+
+    <tr class="wahl" data-row="11">
+      <td class="nr">11</td>
+      <td class="fach">
+        <span class="fach-label">Weiteres Wahlfach</span> <span class="badge badge-wahl">Wahl</span>
+        <div class="fach-options">Zusätzlicher Grundkurs (optional)</div>
+      </td>
+      <td>
+        <select id="wahl11" onchange="recalc()">
+          <option value="">-- nicht belegt --</option>
+          <optgroup label="Fremdsprachen">
+            <option value="E">E - Englisch</option>
+            <option value="F">F - Französisch</option>
+            <option value="L">L - Latein</option>
+            <option value="S">S - Spanisch (neu)</option>
+          </optgroup>
+          <optgroup label="Naturwissenschaften">
+            <option value="BI">BI - Biologie</option>
+            <option value="CH">CH - Chemie</option>
+            <option value="PH">PH - Physik</option>
+          </optgroup>
+          <optgroup label="Gesellschaftswissenschaften">
+            <option value="GE">GE - Geschichte</option>
+            <option value="EK">EK - Erdkunde</option>
+            <option value="SW">SW - Sozialwissenschaften</option>
+            <option value="PA">PA - Pädagogik</option>
+            <option value="PS">PS - Psychologie</option>
+          </optgroup>
+          <optgroup label="Sonstige">
+            <option value="KU">KU - Kunst</option>
+            <option value="MU">MU - Musik</option>
+            <option value="IF">IF - Informatik</option>
+          </optgroup>
+        </select>
+      </td>
+      <td class="center"><input type="checkbox" id="schr11" onchange="recalc()"></td>
+      <td class="center"><input type="number" id="std11" value="0" min="0" max="5" onchange="recalc()"></td>
+    </tr>
+
+    <tr class="section-header"><td colspan="5">Vertiefungskurse (je 2 Stunden, nicht schriftlich)</td></tr>
+
+    <tr class="wahl" data-row="12">
+      <td class="nr">12</td>
+      <td class="fach">
+        <span class="fach-label">Vertiefungskurs 1</span> <span class="badge badge-vert">Vertiefung</span>
+        <div class="fach-options">2-stündig, keine Klausuren</div>
+      </td>
+      <td>
+        <select id="wahl12" onchange="recalc()">
+          <option value="">-- nicht belegt --</option>
+          <option value="VD">Vertiefung Deutsch</option>
+          <option value="VM">Vertiefung Mathematik</option>
+          <option value="VE">Vertiefung Englisch</option>
+          <option value="VF">Vertiefung Französisch</option>
+        </select>
+      </td>
+      <td class="center"><input type="checkbox" disabled></td>
+      <td class="center"><input type="number" id="std12" value="0" min="0" max="2" onchange="recalc()"></td>
+    </tr>
+
+    <tr class="wahl" data-row="13">
+      <td class="nr">13</td>
+      <td class="fach">
+        <span class="fach-label">Vertiefungskurs 2</span> <span class="badge badge-vert">Vertiefung</span>
+        <div class="fach-options">2-stündig, keine Klausuren</div>
+      </td>
+      <td>
+        <select id="wahl13" onchange="recalc()">
+          <option value="">-- nicht belegt --</option>
+          <option value="VD">Vertiefung Deutsch</option>
+          <option value="VM">Vertiefung Mathematik</option>
+          <option value="VE">Vertiefung Englisch</option>
+          <option value="VF">Vertiefung Französisch</option>
+        </select>
+      </td>
+      <td class="center"><input type="checkbox" disabled></td>
+      <td class="center"><input type="number" id="std13" value="0" min="0" max="2" onchange="recalc()"></td>
+    </tr>
+
+    <tr class="total-row">
+      <td colspan="4" style="text-align:right; padding-right: 20px;">Wochenstunden gesamt:</td>
+      <td class="center" id="totalRow">0</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="warnings" id="warnings"></div>
+
+<script>
+const STORAGE_KEY = 'ef-wahlbogen-data';
+const FREMDSPRACHEN = ['E', 'F', 'L', 'S'];
+const NATURWISS = ['BI', 'CH', 'PH'];
+const GESELLSCHAFTSWISS = ['GE', 'EK', 'SW', 'PA', 'PS'];
+
+// ===== SAVE / LOAD =====
+function collectFormData() {
+  const data = {};
+  for (let i = 1; i <= 13; i++) {
+    const wahlEl = document.getElementById('wahl' + i);
+    const stdEl = document.getElementById('std' + i);
+    const schrEl = document.getElementById('schr' + i);
+    data['wahl' + i] = wahlEl ? wahlEl.value : '';
+    data['std' + i] = stdEl ? stdEl.value : '0';
+    data['schr' + i] = schrEl ? schrEl.checked : false;
+  }
+  data.savedAt = new Date().toISOString();
+  return data;
+}
+
+function applyFormData(data) {
+  for (let i = 1; i <= 13; i++) {
+    const wahlEl = document.getElementById('wahl' + i);
+    const stdEl = document.getElementById('std' + i);
+    const schrEl = document.getElementById('schr' + i);
+    if (wahlEl && data['wahl' + i] !== undefined) wahlEl.value = data['wahl' + i];
+    if (stdEl && data['std' + i] !== undefined) stdEl.value = data['std' + i];
+    if (schrEl && !schrEl.disabled && data['schr' + i] !== undefined) schrEl.checked = data['schr' + i];
+  }
+}
+
+function saveData() {
+  const data = collectFormData();
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    showSaveStatus();
+  } catch(e) {
+    alert('Speichern fehlgeschlagen: ' + e.message);
+  }
+}
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const data = JSON.parse(raw);
+      applyFormData(data);
+      return true;
+    }
+  } catch(e) { /* ignore */ }
+  return false;
+}
+
+function resetData() {
+  if (!confirm('Alle Eingaben zurücksetzen? Gespeicherte Daten werden gelöscht.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+}
+
+function showSaveStatus() {
+  const el = document.getElementById('saveStatus');
+  el.textContent = 'Gespeichert';
+  el.classList.add('visible');
+  setTimeout(() => el.classList.remove('visible'), 2000);
+}
+
+// Auto-save on every change
+function autoSave() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(collectFormData()));
+  } catch(e) { /* silent */ }
+}
+
+// ===== CALCULATION =====
+function recalc() {
+  let totalStd = 0;
+  let gkCount = 0;
+  let vkCount = 0;
+  let schriftlichCount = 0;
+  const warnings = [];
+  const errors = [];
+
+  const selections = [];
+  for (let i = 1; i <= 13; i++) {
+    const wahlEl = document.getElementById('wahl' + i);
+    const stdEl = document.getElementById('std' + i);
+    const schrEl = document.getElementById('schr' + i);
+    const wahl = wahlEl ? wahlEl.value : '';
+    const std = stdEl ? parseInt(stdEl.value) || 0 : 0;
+    const schr = schrEl ? schrEl.checked : false;
+
+    if (wahl || std > 0) {
+      totalStd += std;
+      if (std === 3) gkCount++;
+      if (std === 2) vkCount++;
+      if (schr) schriftlichCount++;
+      selections.push({ row: i, wahl, std, schr });
+    }
+  }
+
+  // Auto-set hours for Vertiefungskurse
+  for (let i = 12; i <= 13; i++) {
+    const wahlEl = document.getElementById('wahl' + i);
+    const stdEl = document.getElementById('std' + i);
+    if (wahlEl && wahlEl.value && stdEl && parseInt(stdEl.value) === 0) {
+      stdEl.value = 2; recalc(); return;
+    }
+    if (wahlEl && !wahlEl.value && stdEl && parseInt(stdEl.value) > 0) {
+      stdEl.value = 0; recalc(); return;
+    }
+  }
+
+  // Auto-set hours for row 10/11
+  for (let i = 10; i <= 11; i++) {
+    const wahlEl = document.getElementById('wahl' + i);
+    const stdEl = document.getElementById('std' + i);
+    if (wahlEl && wahlEl.value && stdEl && parseInt(stdEl.value) === 0) {
+      stdEl.value = 3; recalc(); return;
+    }
+    if (wahlEl && !wahlEl.value && stdEl && parseInt(stdEl.value) > 0) {
+      stdEl.value = 0; recalc(); return;
+    }
+  }
+
+  // Update displays
+  const totalEl = document.getElementById('totalHours');
+  const totalRowEl = document.getElementById('totalRow');
+  totalEl.textContent = totalStd;
+  totalRowEl.textContent = totalStd;
+
+  if (totalStd >= 34 && totalStd <= 36) {
+    totalEl.className = 'value ok';
+  } else if (totalStd > 0 && totalStd < 34) {
+    totalEl.className = 'value warn';
+  } else if (totalStd > 36) {
+    totalEl.className = 'value error';
+  } else {
+    totalEl.className = 'value';
+  }
+
+  document.getElementById('totalGK').textContent = gkCount;
+  document.getElementById('totalVK').textContent = vkCount;
+  document.getElementById('totalSchriftlich').textContent = schriftlichCount;
+
+  // Validation
+  for (let i = 1; i <= 8; i++) {
+    const wahlEl = document.getElementById('wahl' + i);
+    if (wahlEl && !wahlEl.value) {
+      errors.push('Pflichtfach Nr. ' + i + ' muss gewählt werden.');
+    }
+  }
+
+  if (totalStd > 0 && totalStd < 34) {
+    errors.push('Zu wenig Stunden: ' + totalStd + ' (mindestens 34 erforderlich). Es fehlen noch ' + (34 - totalStd) + ' Stunden.');
+  }
+  if (totalStd > 36) {
+    errors.push('Zu viele Stunden: ' + totalStd + ' (höchstens 36 erlaubt). ' + (totalStd - 36) + ' Stunden zu viel.');
+  }
+
+  for (let i = 9; i <= 11; i++) {
+    const wahlEl = document.getElementById('wahl' + i);
+    const schrEl = document.getElementById('schr' + i);
+    if (wahlEl && FREMDSPRACHEN.includes(wahlEl.value) && schrEl && !schrEl.checked) {
+      warnings.push('Fremdsprache ' + wahlEl.value + ' (Nr. ' + i + ') sollte schriftlich belegt werden.');
+    }
+  }
+
+  let hasGWSchriftlich = false;
+  let hasNWSchriftlich = false;
+  for (let i = 1; i <= 11; i++) {
+    const wahlEl = document.getElementById('wahl' + i);
+    const schrEl = document.getElementById('schr' + i);
+    if (wahlEl && schrEl && schrEl.checked) {
+      if (GESELLSCHAFTSWISS.includes(wahlEl.value)) hasGWSchriftlich = true;
+      if (NATURWISS.includes(wahlEl.value)) hasNWSchriftlich = true;
+    }
+  }
+  if (!hasGWSchriftlich && !hasNWSchriftlich && totalStd > 0) {
+    warnings.push('Mindestens eine Gesellschaftswissenschaft oder eine Naturwissenschaft muss schriftlich belegt werden.');
+  }
+
+  const chosen = {};
+  for (let i = 1; i <= 11; i++) {
+    const wahlEl = document.getElementById('wahl' + i);
+    if (wahlEl && wahlEl.value) {
+      if (chosen[wahlEl.value]) {
+        warnings.push('Fach "' + wahlEl.value + '" ist doppelt gewählt (Nr. ' + chosen[wahlEl.value] + ' und Nr. ' + i + ').');
+      } else {
+        chosen[wahlEl.value] = i;
+      }
+    }
+  }
+
+  const successes = [];
+  if (totalStd >= 34 && totalStd <= 36) {
+    successes.push('Stundenzahl OK: ' + totalStd + ' Wochenstunden (34-36 erlaubt)');
+  }
+  if (errors.length === 0 && warnings.length === 0 && totalStd >= 34) {
+    successes.push('Alle Pflichtfächer gewählt und Regeln eingehalten!');
+  }
+
+  const container = document.getElementById('warnings');
+  container.innerHTML = '';
+  errors.forEach(e => { container.innerHTML += '<div class="error-item">' + e + '</div>'; });
+  warnings.forEach(w => { container.innerHTML += '<div class="warning-item">' + w + '</div>'; });
+  successes.forEach(s => { container.innerHTML += '<div class="success-item">' + s + '</div>'; });
+
+  // Auto-save after every change
+  autoSave();
+}
+
+// ===== INIT =====
+loadData();
+recalc();
+</script>
+
+</body>
+</html>
